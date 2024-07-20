@@ -11,7 +11,7 @@ class BaseCAM(object):
 
         : Args
             - **model_dict -** : Dict. Has format as dict(type='vgg', arch=torchvision.models.vgg16(pretrained=True),
-            layer_name='features',input_size=(224, 224)).
+            layer_name='features', input_size=(224, 224)).
 
     """
 
@@ -22,22 +22,22 @@ class BaseCAM(object):
         self.model_arch = model_dict['arch']
         self.model_arch.eval()
         if torch.cuda.is_available():
-          self.model_arch.cuda()
+            self.model_arch.cuda()
         self.gradients = dict()
         self.activations = dict()
 
         def backward_hook(module, grad_input, grad_output):
             if torch.cuda.is_available():
-              self.gradients['value'] = grad_output[0].cuda()
+                self.gradients['value'] = grad_output[0].cuda()
             else:
-              self.gradients['value'] = grad_output[0]
+                self.gradients['value'] = grad_output[0]
             return None
 
         def forward_hook(module, input, output):
             if torch.cuda.is_available():
-              self.activations['value'] = output.cuda()
+                self.activations['value'] = output.cuda()
             else:
-              self.activations['value'] = output
+                self.activations['value'] = output
             return None
 
         if 'vgg' in model_type.lower():

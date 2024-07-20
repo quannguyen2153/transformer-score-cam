@@ -8,6 +8,7 @@ transformation.
 from PIL import Image
 import matplotlib.pyplot as plt
 
+import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 
@@ -134,13 +135,13 @@ def apply_transforms_v0(image, size=224):
 
 
 def denormalize(tensor):
-    """Reverses the normalisation on a tensor.
+    """Reverses the normalization on a tensor.
 
     Performs a reverse operation on a tensor, so the pixel value range is
     between 0 and 1. Useful for when plotting a tensor into an image.
 
-    Normalisation: (image - mean) / std
-    Denormalisation: image * std + mean
+    Normalization: (image - mean) / std
+    Denormalization: image * std + mean
 
     Args:
         tensor (torch.Tensor, dtype=torch.float32): Normalized image tensor
@@ -150,7 +151,7 @@ def denormalize(tensor):
         Output: :math:`(N, C, H, W)` (same shape as input)
 
     Return:
-        torch.Tensor (torch.float32): Demornalised image tensor with pixel
+        torch.Tensor (torch.float32): Denormalized image tensor with pixel
             values between [0, 1]
 
     Note:
@@ -159,17 +160,12 @@ def denormalize(tensor):
             - C: number of channels
             - H: height of the image
             - W: width of the image
-
     """
 
-    means = [0.485, 0.456, 0.406]
-    stds = [0.229, 0.224, 0.225]
+    means = torch.tensor([0.485, 0.456, 0.406], dtype=tensor.dtype, device=tensor.device).view(1, -1, 1, 1)
+    stds = torch.tensor([0.229, 0.224, 0.225], dtype=tensor.dtype, device=tensor.device).view(1, -1, 1, 1)
 
-    denormalized = tensor.clone()
-
-    for channel, mean, std in zip(denormalized[0], means, stds):
-        channel.mul_(std).add_(mean)
-
+    denormalized = tensor * stds + means
     return denormalized
 
 
