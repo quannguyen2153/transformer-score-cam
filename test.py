@@ -10,9 +10,9 @@ from cam.scorecam import *
 image_dir = Path("images")
 sample_image = Path("ILSVRC2012_val_00002193.JPEG")
 output_dir = Path("output")
-alexnet_output = Path("alexnet.png")
-vgg_output = Path("vgg.png")
-resnet_output = Path("resnet.png")
+alexnet_output = output_dir / Path("alexnet.png")
+vgg_output = output_dir / Path("vgg.png")
+resnet_output = output_dir / Path("resnet.png")
 
 # alexnet
 alexnet = models.alexnet(weights=models.AlexNet_Weights.DEFAULT).eval()
@@ -26,7 +26,8 @@ if torch.cuda.is_available():
 predicted_class = alexnet(input_).max(1)[-1]
 
 scorecam_map = alexnet_scorecam(input_)
-basic_visualize(input_.cpu(), scorecam_map.type(torch.FloatTensor).cpu(),save_path=output_dir / alexnet_output)
+basic_visualize(input_.cpu(), scorecam_map.type(torch.FloatTensor).cpu(),save_path=alexnet_output)
+print(f"ScoreCAM output of AlexNet is saved as {alexnet_output}.")
 
 # vgg
 vgg = models.vgg16(weights=models.VGG16_Weights.DEFAULT).eval()
@@ -40,7 +41,8 @@ if torch.cuda.is_available():
 predicted_class = vgg(input_).max(1)[-1]
 
 scorecam_map = vgg_scorecam(input_)
-basic_visualize(input_.cpu(), scorecam_map.type(torch.FloatTensor).cpu(),save_path=output_dir / vgg_output)
+basic_visualize(input_.cpu(), scorecam_map.type(torch.FloatTensor).cpu(),save_path=vgg_output)
+print(f"ScoreCAM output of VGG16 is saved as {vgg_output}.")
 
 # resnet
 resnet = models.resnet18(weights=models.ResNet18_Weights.DEFAULT).eval()
@@ -54,4 +56,5 @@ if torch.cuda.is_available():
 predicted_class = resnet(input_).max(1)[-1]
 
 scorecam_map = resnet_scorecam(input_)
-basic_visualize(input_.cpu(), scorecam_map.type(torch.FloatTensor).cpu(),save_path=output_dir / resnet_output)
+basic_visualize(input_.cpu(), scorecam_map.type(torch.FloatTensor).cpu(),save_path=resnet_output)
+print(f"ScoreCAM output of ResNet is saved as {resnet_output}.")
