@@ -28,7 +28,7 @@ def load_image(image_path):
     return Image.open(image_path).convert('RGB')
 
 
-def apply_transforms(image, size=224):
+def apply_transforms(image, size=224) -> torch.Tensor:
     """Transforms a PIL image to torch.Tensor.
 
     Applies a series of tranformations on PIL image including a conversion
@@ -302,14 +302,15 @@ def basic_visualize(input_, gradients, save_path=None, weight=None, cmap='viridi
 
     num_subplots = len(subplots)
 
-    fig = plt.figure(figsize=(4, 4))
+    fig, axes = plt.subplots(num_subplots, 1, figsize=(4, 8))
 
     for i, (title, images) in enumerate(subplots):
-        ax = fig.add_subplot(1, num_subplots, i + 1)
+        ax = axes[i]
         ax.set_axis_off()
 
         for image, cmap, alpha in images:
             ax.imshow(image, cmap=cmap, alpha=alpha)
+            ax.set_title(title)
 
     if save_path is not None:
         plt.savefig(save_path)
