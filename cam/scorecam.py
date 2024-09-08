@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 
-from cam.properties import ModelInfo
 from utils import (
     find_alexnet_layer,
     find_vgg_layer,
@@ -15,21 +14,13 @@ from utils import (
 )
 
 class ScoreCAM():
-
-    """
-        ScoreCAM
-
-    """
-
-    def __init__(self, model_dict: ModelInfo) -> None:
-        model_type = model_dict['type']
-        layer_name = model_dict['layer_name']
-        
-        self.model_arch = model_dict['architecture']
-        self.model_arch.eval()
+    def __init__(self, model_name: str, model_architecture: torch.nn.Module, target_layer_name: str) -> None:
+        self.model_name = model_name
+        self.target_layer_name = target_layer_name
+        self.model_architecture = model_architecture
+        self.model_architecture.eval()
         if torch.cuda.is_available():
-            self.model_arch.cuda()
-        self.gradients = dict()
+            self.model_architecture.cuda()
         self.activations = dict()
 
         def forward_hook(module: torch.nn.Module, input: tuple, output: torch.Tensor) -> None:
@@ -39,24 +30,24 @@ class ScoreCAM():
                 self.activations['value'] = output
             return None
 
-        if 'vgg' in model_type.lower():
-            self.target_layer = find_vgg_layer(self.model_arch, layer_name)
-        elif 'resnet' in model_type.lower():
-            self.target_layer = find_resnet_layer(self.model_arch, layer_name)
-        elif 'densenet' in model_type.lower():
-            self.target_layer = find_densenet_layer(self.model_arch, layer_name)
-        elif 'alexnet' in model_type.lower():
-            self.target_layer = find_alexnet_layer(self.model_arch, layer_name)
-        elif 'squeezenet' in model_type.lower():
-            self.target_layer = find_squeezenet_layer(self.model_arch, layer_name)
-        elif 'googlenet' in model_type.lower():
-            self.target_layer = find_googlenet_layer(self.model_arch, layer_name)
-        elif 'shufflenet' in model_type.lower():
-            self.target_layer = find_shufflenet_layer(self.model_arch, layer_name)
-        elif 'mobilenet' in model_type.lower():
-            self.target_layer = find_mobilenet_layer(self.model_arch, layer_name)
+        if 'vgg' in self.model_name.lower():
+            self.target_layer = find_vgg_layer(self.model_architecture, self.target_layer_name)
+        elif 'resnet' in self.model_name.lower():
+            self.target_layer = find_resnet_layer(self.model_architecture, self.target_layer_name)
+        elif 'densenet' in self.model_name.lower():
+            self.target_layer = find_densenet_layer(self.model_architecture, self.target_layer_name)
+        elif 'alexnet' in self.model_name.lower():
+            self.target_layer = find_alexnet_layer(self.model_architecture, self.target_layer_name)
+        elif 'squeezenet' in self.model_name.lower():
+            self.target_layer = find_squeezenet_layer(self.model_architecture, self.target_layer_name)
+        elif 'googlenet' in self.model_name.lower():
+            self.target_layer = find_googlenet_layer(self.model_architecture, self.target_layer_name)
+        elif 'shufflenet' in self.model_name.lower():
+            self.target_layer = find_shufflenet_layer(self.model_architecture, self.target_layer_name)
+        elif 'mobilenet' in self.model_name.lower():
+            self.target_layer = find_mobilenet_layer(self.model_architecture, self.target_layer_name)
         else:
-            self.target_layer = find_layer(self.model_arch, layer_name)
+            self.target_layer = find_layer(self.model_architecture, self.target_layer_name)
 
         self.target_layer.register_forward_hook(forward_hook)
 
@@ -64,7 +55,7 @@ class ScoreCAM():
         b, c, h, w = input.size()
         
         # Prediction on raw input
-        logit = self.model_arch(input).cuda()
+        logit = self.model_architecture(input).cuda()
         
         if class_idx is None:
             predicted_class = logit.max(1)[-1]
@@ -77,7 +68,7 @@ class ScoreCAM():
             predicted_class = predicted_class.cuda()
             logit = logit.cuda()
 
-        self.model_arch.zero_grad()
+        self.model_architecture.zero_grad()
         activations = self.activations['value']
         b, k, u, v = activations.size()
         
@@ -91,8 +82,8 @@ class ScoreCAM():
             for i in range(k):
 
                 # Upsampling
-                saliency_map = torch.unsqueeze(activations[:, i, :, :], 1)
-                saliency_map = F.interpolate(saliency_map, size=(h, w), mode='bilinear', align_corners=False)
+                saliency_map = torch.unsqueeze(activations[:, i, :, :], 1) # Get the activation map and restructure to size (b, 1, u, v)
+                saliency_map = F.interpolate(saliency_map, size=(h, w), mode='bilinear', align_corners=False) # Resize to size (b, 1, h, w)
                 
                 if saliency_map.max() == saliency_map.min():
                     continue
@@ -102,7 +93,7 @@ class ScoreCAM():
 
                 # How much increase if keeping the highlighted region
                 # Prediction on masked input
-                output = self.model_arch(input * norm_saliency_map)
+                output = self.model_architecture(input * norm_saliency_map)
                 output = F.softmax(output, dim=1)
                 score = output[0][predicted_class]
 
