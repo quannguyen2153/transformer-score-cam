@@ -1,7 +1,9 @@
+from typing import Union
+
 import torch
 import torch.nn.functional as F
 
-from utils import (
+from .utils import (
     find_alexnet_layer,
     find_vgg_layer,
     find_resnet_layer,
@@ -51,7 +53,7 @@ class ScoreCAM():
 
         self.target_layer.register_forward_hook(forward_hook)
 
-    def forward(self, input: torch.Tensor, class_idx: int | None=None):
+    def forward(self, input: torch.Tensor, class_idx: Union[int, None] = None):
         b, c, h, w = input.size()
         
         # Prediction on raw input
@@ -110,5 +112,5 @@ class ScoreCAM():
 
         return score_saliency_map
 
-    def __call__(self, input: torch.Tensor, class_idx: int | None=None):
+    def __call__(self, input: torch.Tensor, class_idx: Union[int, None] = None):
         return self.forward(input, class_idx)
