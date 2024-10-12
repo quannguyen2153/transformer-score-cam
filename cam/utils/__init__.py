@@ -589,8 +589,24 @@ def find_layer(arch, target_layer_name):
         : Return:
             - **target_layer - **: Found layer. This layer will be hooked to get forward/backward pass information.
     """
+    
+    target_layer = arch
+    layer_names = target_layer_name.split('.')
 
-    if target_layer_name.split('_') not in arch._modules.keys():
-        raise Exception("Invalid target layer name.")
-    target_layer = arch._modules[target_layer_name]
+    for name in layer_names:
+        if isinstance(target_layer, list):
+            try:
+                name = int(name)
+            except ValueError:
+                raise Exception(f"Expected an index in list but got {name} instead.")
+            
+            if name >= len(target_layer):
+                raise IndexError(f"Index {name} out of range for layer list.")
+            
+            target_layer = target_layer[name]
+        else:
+            if not hasattr(target_layer, name):
+                raise Exception(f"Invalid target layer name: {target_layer_name}")
+            target_layer = getattr(target_layer, name)
+    
     return target_layer
