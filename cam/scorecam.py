@@ -62,14 +62,14 @@ class ScoreCAM():
         else:
             predicted_class = torch.LongTensor([class_idx])
         
-        logit = F.softmax(logit, dim=1)
+        # logit = F.softmax(logit, dim=1)
 
         if torch.cuda.is_available():
             predicted_class = predicted_class.cuda()
-            logit = logit.cuda()
+            # logit = logit.cuda()
 
         self.model_architecture.zero_grad()
-        activations = self.activations['value']
+        activations = self.activations['value'] # Get activation maps
         b, k, u, v = activations.size()
         
         score_saliency_map = torch.zeros((1, 1, h, w))
@@ -79,6 +79,7 @@ class ScoreCAM():
             score_saliency_map = score_saliency_map.cuda()
 
         with torch.no_grad():
+            # Loop through each activation map
             for i in range(k):
 
                 # Upsampling
